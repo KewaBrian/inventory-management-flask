@@ -5,7 +5,7 @@ Modern, clean, and fully responsive Inventory Management System built with **Fla
 Designed for smooth item handling, user profiles, authentication, and real-time search.
 
 <p align="center">
-  <img src="banner.png" alt="Inventory App Banner" />
+  <img src="assets/banner.png" alt="Inventory App Banner" />
 </p>
 
 ---
