@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="text-4xl font-bold mb-8 text-center">Item Details</h1>
+
+<div class="max-w-4xl mx-auto bg-white shadow-lg rounded-2xl p-8">
+
+    <!-- MAIN GRID -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+        <!-- IMAGE SECTION -->
+        <div class="flex justify-center">
+            <div class="w-48 h-48 bg-gray-100 border rounded-xl flex items-center justify-center text-gray-400 text-6xl">
+
+                {% if item.image_filename %}
+                    <img src="{{ url_for('static', filename='uploads/' ~ item.image_filename) }}"
+                         class="w-full h-full object-cover rounded-xl">
+                {% else %}
+                    <i class="bi bi-box-seam"></i>
+                {% endif %}
+
+            </div>
+        </div>
+
+        <!-- DETAILS SECTION -->
+        <div class="md:col-span-2">
+
+            <h2 class="text-3xl font-bold mb-2">{{ item.name }}</h2>
+
+            <!-- CATEGORY -->
+            {% if item.category %}
+                <span class="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm">
+                    {{ item.category }}
+                </span>
+            {% endif %}
+
+            <!-- DESCRIPTION -->
+            <p class="item-description mt-4 text-gray-700">
+                {{ item.description or "No description available." }}
+            </p>
+
+            <!-- QUANTITY -->
+            <p class="mt-5 text-lg">
+                Quantity:
+                {% if item.quantity <= 5 %}
+                    <span class="text-red-600 font-semibold">{{ item.quantity }} (Low stock)</span>
+                {% else %}
+                    <span class="text-green-600 font-semibold">{{ item.quantity }}</span>
+                {% endif %}
+            </p>
+
+            <!-- PRICE -->
+            <p class="mt-2 text-xl font-bold text-green-700">
+                ${{ "%.2f"|format(item.price) }}
+            </p>
+
+            <!-- DATE -->
+            <p class="text-gray-500 mt-1 text-sm">
+                Added on {{ item.created_at.strftime("%B %d, %Y") }}
+            </p>
+
+            <!-- BUTTONS -->
+            <div class="mt-6 flex gap-4">
+                <a href="{{ url_for('main.edit', item_id=item.id) }}"
+                   class="px-5 py-2 bg-yellow-500 text-white font-medium rounded hover:bg-yellow-600">
+                    Edit Item
+                </a>
+
+                <a href="{{ url_for('main.delete', item_id=item.id) }}"
+                   class="px-5 py-2 bg-red-600 text-white font-medium rounded hover:bg-red-700">
+                    Delete
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

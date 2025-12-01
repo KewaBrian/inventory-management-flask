@@ -1,0 +1,322 @@
+import os
+import csv
+from io import BytesIO, StringIO
+from datetime import datetime
+from werkzeug.utils import secure_filename
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, send_file
+from flask_login import login_required, current_user
+from extensions import db
+from models import Item, User
+from forms import AddItemForm, EditItemForm
+
+
+bp = Blueprint("main", __name__, template_folder="templates")
+
+ALLOWED_EXT = {"png", "jpg", "jpeg", "gif"}
+
+
+# -----------------------------
+# FILE VALIDATION
+# -----------------------------
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXT
+
+
+def save_image(file_storage):
+    """
+    Save uploaded image safely.
+    """
+    if not file_storage:
+        return None
+
+    filename = secure_filename(file_storage.filename)
+    if not filename or not allowed_file(filename):
+        return None
+
+    upload_folder = current_app.config.get(
+        "UPLOAD_FOLDER",
+        os.path.join(current_app.root_path, "static", "uploads")
+    )
+    os.makedirs(upload_folder, exist_ok=True)
+
+    basename, ext = os.path.splitext(filename)
+    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
+    filename_final = f"{basename}_{timestamp}{ext}"
+
+    path = os.path.join(upload_folder, filename_final)
+    file_storage.save(path)
+
+    return filename_final
+
+
+# -----------------------------
+# HOME PAGE (USER ITEMS ONLY)
+# -----------------------------
+@bp.route("/")
+@login_required
+def index():
+    page = request.args.get("page", 1, type=int)
+    per_page = current_app.config.get("ITEMS_PER_PAGE", 6)
+    low_stock_threshold = current_app.config.get("LOW_STOCK_THRESHOLD", 5)
+
+    items = Item.query.filter_by(user_id=current_user.id) \
+        .order_by(Item.created_at.desc()) \
+        .paginate(page=page, per_page=per_page, error_out=False)
+
+    return render_template("index.html", items=items, low_stock_threshold=low_stock_threshold)
+
+
+# -----------------------------
+# VIEW ITEM (ONLY IF OWNER)
+# -----------------------------
+@bp.route("/item/<int:item_id>")
+@login_required
+def view(item_id):
+    item = Item.query.get_or_404(item_id)
+    if item.user_id != current_user.id:
+        flash("Unauthorized access.", "danger")
+        return redirect(url_for("main.index"))
+
+    return render_template("view.html", item=item)
+
+
+# -----------------------------
+# ADD ITEM (USER-SPECIFIC)
+# -----------------------------
+@bp.route("/add", methods=["GET", "POST"])
+@login_required
+def add():
+    form = AddItemForm()
+
+    if form.validate_on_submit():
+        if form.quantity.data > 100000 or form.price.data > 1000000:
+            flash("Quantity or price too large.", "danger")
+            return redirect(url_for("main.add"))
+        image_filename = None
+        if form.image.data:
+            image_filename = save_image(form.image.data)
+
+        item = Item(
+            name=form.name.data,
+            description=form.description.data,
+            quantity=form.quantity.data,
+            price=float(form.price.data),
+            category=form.category.data or None,
+            image_filename=image_filename,
+            user_id=current_user.id  # 🔥 IMPORTANT FIX
+        )
+
+        db.session.add(item)
+        db.session.commit()
+
+        flash("Item added successfully!", "success")
+        return redirect(url_for("main.index"))
+
+    return render_template("add.html", form=form)
+
+
+# -----------------------------
+# EDIT ITEM (ONLY OWNER)
+# -----------------------------
+@bp.route("/edit/<int:item_id>", methods=["GET", "POST"])
+@login_required
+def edit(item_id):
+    item = Item.query.get_or_404(item_id)
+
+    if item.user_id != current_user.id:
+        flash("Unauthorized.", "danger")
+        return redirect(url_for("main.index"))
+
+    form = EditItemForm(obj=item)
+
+    if form.validate_on_submit():
+        if form.quantity.data > 100000 or form.price.data > 1000000:
+            flash("Quantity or price too large.", "danger")
+            return redirect(url_for("main.edit", item_id=item.id))
+
+        # Replace image if new one uploaded
+        if form.image.data and form.image.data.filename:
+            if item.image_filename:
+                old_path = os.path.join(
+                    current_app.config.get(
+                        "UPLOAD_FOLDER",
+                        os.path.join(current_app.root_path, "static", "uploads")
+                    ),
+                    item.image_filename
+                )
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+
+            item.image_filename = save_image(form.image.data)
+
+        item.name = form.name.data
+        item.description = form.description.data
+        item.quantity = form.quantity.data
+        item.price = float(form.price.data)
+        item.category = form.category.data or None
+
+        db.session.commit()
+
+        flash("Item updated!", "success")
+        return redirect(url_for("main.view", item_id=item.id))
+
+    return render_template("edit.html", form=form, item=item)
+
+
+# -----------------------------
+# DELETE ITEM (ONLY OWNER)
+# -----------------------------
+@bp.route("/delete/<int:item_id>", methods=["POST"])
+@login_required
+def delete(item_id):
+    item = Item.query.get_or_404(item_id)
+
+    if item.user_id != current_user.id:
+        flash("Unauthorized.", "danger")
+        return redirect(url_for("main.index"))
+
+    # Delete image file
+    if item.image_filename:
+        try:
+            path = os.path.join(
+                current_app.config.get("UPLOAD_FOLDER", os.path.join(current_app.root_path, "static", "uploads")),
+                item.image_filename,
+            )
+            if os.path.exists(path):
+                os.remove(path)
+        except:
+            pass
+
+    db.session.delete(item)
+    db.session.commit()
+
+    flash("Item deleted.", "info")
+    return redirect(url_for("main.index"))
+
+
+# -----------------------------
+# SEARCH (ONLY USER ITEMS)
+# -----------------------------
+@bp.route("/search")
+@login_required
+def search():
+    q = request.args.get("q", "")
+    page = request.args.get("page", 1, type=int)
+
+    if not q:
+        empty = type(
+            "obj",
+            (object,),
+            {"items": [], "has_prev": False, "has_next": False, "page": 1, "pages": 1},
+        )()
+        return render_template("search.html", items=empty, q=None)
+
+    items = Item.query.filter(
+        Item.user_id == current_user.id,
+        Item.name.ilike(f"%{q}%")
+    ).paginate(page=page, per_page=6, error_out=False)
+
+    return render_template("search.html", items=items, q=q)
+
+
+# -----------------------------
+# DASHBOARD (USER ITEMS ONLY)
+# -----------------------------
+@bp.route("/dashboard")
+@login_required
+def dashboard():
+    total_items = Item.query.filter_by(user_id=current_user.id).count()
+
+    total_value = db.session.query(
+        db.func.sum(Item.price * Item.quantity)
+    ).filter(Item.user_id == current_user.id).scalar() or 0
+
+    recent_items = Item.query.filter_by(user_id=current_user.id) \
+        .order_by(Item.created_at.desc()) \
+        .limit(5).all()
+
+    return render_template(
+        "dashboard.html",
+        total_items=total_items,
+        total_value=total_value,
+        recent_items=recent_items
+    )
+
+
+# -----------------------------
+# EXPORT CSV (USER ITEMS ONLY)
+# -----------------------------
+@bp.route("/export/csv")
+@login_required
+def export_csv():
+    items = Item.query.filter_by(user_id=current_user.id).order_by(Item.id).all()
+
+    si = StringIO()
+    writer = csv.writer(si)
+    writer.writerow(["id", "name", "description", "quantity", "price", "category", "image_filename", "created_at"])
+
+    for it in items:
+        writer.writerow([
+            it.id,
+            it.name,
+            it.description or "",
+            it.quantity,
+            "%.2f" % it.price,
+            it.category or "",
+            it.image_filename or "",
+            it.created_at.isoformat(),
+        ])
+
+    mem = BytesIO(si.getvalue().encode("utf-8"))
+    mem.seek(0)
+
+    return send_file(mem, mimetype="text/csv", as_attachment=True, download_name="items_export.csv")
+
+
+# -----------------------------
+# IMPORT CSV (IMPORTS TO USER ONLY)
+# -----------------------------
+@bp.route("/import/csv", methods=["GET", "POST"])
+@login_required
+def import_csv():
+    if request.method == "POST":
+        f = request.files.get("file")
+        if not f:
+            flash("No file uploaded", "danger")
+            return redirect(url_for("main.import_csv"))
+
+        try:
+            content = f.stream.read().decode("utf-8")
+        except:
+            flash("Unable to read file.", "danger")
+            return redirect(url_for("main.import_csv"))
+
+        stream = StringIO(content)
+        reader = csv.DictReader(stream)
+        count = 0
+
+        for row in reader:
+            try:
+                name = row.get("name") or ""
+                if not name:
+                    continue
+
+                item = Item(
+                    name=name,
+                    description=row.get("description", ""),
+                    quantity=int(row.get("quantity", 0)),
+                    price=float(row.get("price", 0)),
+                    category=row.get("category") or None,
+                    user_id=current_user.id   # 👈 import also belongs to user!
+                )
+
+                db.session.add(item)
+                count += 1
+            except:
+                continue
+
+        db.session.commit()
+        flash(f"Imported {count} items.", "success")
+        return redirect(url_for("main.index"))
+
+    return render_template("import_csv.html")

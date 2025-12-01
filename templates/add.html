@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Add Item{% endblock %}
+
+{% block content %}
+
+<h1 class="text-3xl font-bold mb-8">Add New Item</h1>
+
+<div class="max-w-xl mx-auto bg-white p-8 rounded-xl shadow">
+
+    <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+
+        <!-- Name -->
+        <label class="block font-medium mb-1">Name</label>
+        {{ form.name(class="w-full border rounded px-3 py-2 mb-5 focus:ring focus:border-blue-500") }}
+
+        <!-- Description -->
+        <label class="block font-medium mb-1">Description</label>
+        {{ form.description(class="w-full border rounded px-3 py-2 mb-5 focus:ring focus:border-blue-500") }}
+
+        <!-- Category -->
+        <label class="block font-medium mb-1">Category</label>
+        {{ form.category(class="w-full border rounded px-3 py-2 mb-5") }}
+
+        <!-- Quantity -->
+        <label class="block font-medium mb-1">Quantity</label>
+        {{ form.quantity(class="w-full border rounded px-3 py-2 mb-5 focus:ring focus:border-blue-500") }}
+
+        <!-- Price -->
+        <label class="block font-medium mb-1">Price ($)</label>
+        {{ form.price(class="w-full border rounded px-3 py-2 mb-6 focus:ring focus:border-blue-500") }}
+
+        <!-- Image -->
+        <label class="block font-medium mb-1">Image (optional)</label>
+        {{ form.image(class="w-full mb-6") }}
+
+        <!-- Submit Button -->
+        <button class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition">
+            Add Item
+        </button>
+
+    </form>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Inventory{% endblock %}
+
+{% block content %}
+
+<h1 class="text-3xl font-bold mb-8">Inventory</h1>
+
+<!-- Inventory Table -->
+<div class="overflow-x-auto bg-white rounded-xl shadow-md border border-gray-200">
+    <table class="w-full text-left border-collapse">
+        <thead class="bg-gray-50 text-gray-700 border-b">
+            <tr>
+                <th class="px-6 py-4 font-semibold text-sm">Item</th>
+                <th class="px-6 py-4 font-semibold text-sm">Description</th>
+                <th class="px-6 py-4 font-semibold text-sm">Category</th>
+                <th class="px-6 py-4 font-semibold text-sm">Quantity</th>
+                <th class="px-6 py-4 font-semibold text-sm">Price</th>
+                <th class="px-6 py-4 font-semibold text-sm text-right">Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for item in items.items %}
+            <tr class="border-b hover:bg-gray-50 transition-all">
+                
+                <!-- ITEM + IMAGE -->
+                <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        {% if item.image_filename %}
+                            <img src="{{ url_for('static', filename='uploads/' ~ item.image_filename) }}"
+                                 alt="thumb"
+                                 class="w-12 h-12 object-cover rounded-md border">
+                        {% else %}
+                            <div class="w-12 h-12 bg-gray-100 border rounded-md flex items-center justify-center text-gray-400">
+                                <i class="bi bi-image"></i>
+                            </div>
+                        {% endif %}
+
+                        <div>
+                            <a href="{{ url_for('main.view', item_id=item.id) }}"
+                               class="font-semibold text-blue-600 hover:underline text-sm">
+                                {{ item.name }}
+                            </a>
+
+                            <p class="text-xs text-gray-500">
+                                {{ item.created_at.strftime('%b %d, %Y') }}
+                            </p>
+                        </div>
+                    </div>
+                </td>
+
+                <!-- DESCRIPTION -->
+                <td class="px-6 py-4 text-sm text-gray-700 description-cell" title="{{ item.description }}">
+                    {{ item.description }}
+                </td>
+
+                <!-- CATEGORY -->
+                <td class="px-6 py-4">
+                    {% if item.category %}
+                        <span class="text-xs px-2 py-1 rounded-md bg-gray-100 border text-gray-700">
+                            {{ item.category }}
+                        </span>
+                    {% else %}
+                        <span class="text-xs text-gray-400">—</span>
+                    {% endif %}
+                </td>
+
+                <!-- QUANTITY -->
+                <td class="px-6 py-4">
+                    {% if item.quantity < low_stock_threshold %}
+                        <div class="inline-flex items-center gap-2">
+                            <span class="text-red-600 font-semibold text-sm">{{ item.quantity }}</span>
+                            <span class="text-[11px] text-red-700 bg-red-100 border border-red-200 px-2 py-0.5 rounded-md">
+                                Low Stock
+                            </span>
+                        </div>
+                    {% else %}
+                        <span class="text-sm">{{ item.quantity }}</span>
+                    {% endif %}
+                </td>
+
+                <!-- PRICE -->
+                <td class="px-6 py-4 font-bold text-green-600 text-sm">
+                    ${{ "%.2f"|format(item.price) }}
+                </td>
+
+                <!-- ACTIONS -->
+                <td class="px-6 py-4 text-right">
+                    <div class="inline-flex items-center gap-2">
+
+                        <!-- VIEW -->
+                        <a href="{{ url_for('main.view', item_id=item.id) }}"
+                           class="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                            <i class="bi bi-eye-fill text-sm"></i> View
+                        </a>
+
+                        <!-- EDIT -->
+                        <a href="{{ url_for('main.edit', item_id=item.id) }}"
+                           class="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-yellow-500 text-white rounded-md hover:bg-yellow-600">
+                            <i class="bi bi-pencil-fill text-sm"></i> Edit
+                        </a>
+
+                        <!-- DELETE -->
+                        <form method="POST" action="{{ url_for('main.delete', item_id=item.id) }}">
+                            <button onclick="return confirm('Delete this item?')"
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700">
+                                <i class="bi bi-trash3-fill text-sm"></i> Delete
+                            </button>
+                        </form>
+
+                    </div>
+                </td>
+
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- PAGINATION -->
+<div class="flex justify-center items-center gap-4 mt-8 text-gray-700 text-sm">
+    {% if items.has_prev %}
+        <a href="{{ url_for('main.index', page=items.prev_num) }}" 
+           class="hover:underline">Previous</a>
+    {% else %}
+        <span class="text-gray-400">Previous</span>
+    {% endif %}
+
+    <span class="font-semibold">Page {{ items.page }} / {{ items.pages }}</span>
+
+    {% if items.has_next %}
+        <a href="{{ url_for('main.index', page=items.next_num) }}" 
+           class="hover:underline">Next</a>
+    {% else %}
+        <span class="text-gray-400">Next</span>
+    {% endif %}
+</div>
+
+{% endblock %}

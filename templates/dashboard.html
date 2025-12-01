@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="text-3xl font-bold mb-8">📊 Dashboard Overview</h1>
+
+<!-- Stats Row -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+
+    <!-- Total Items -->
+    <div class="bg-white p-6 rounded-xl shadow">
+        <h3 class="text-gray-600 text-lg">Total Items</h3>
+        <p class="text-3xl font-bold text-blue-600">{{ total_items }}</p>
+    </div>
+
+    <!-- Total Inventory Value -->
+    <div class="bg-white p-6 rounded-xl shadow">
+        <h3 class="text-gray-600 text-lg">Total Value</h3>
+        <p class="text-3xl font-bold text-green-600">
+            ${{ "{:,.2f}".format(total_value) }}
+        </p>
+    </div>
+
+    <!-- Low Stock -->
+    <div class="bg-white p-6 rounded-xl shadow">
+        <h3 class="text-gray-600 text-lg">Low Stock Items</h3>
+        <p class="text-3xl font-bold text-red-600">{{ low_stock|length }}</p>
+    </div>
+
+</div>
+
+<!-- Graph -->
+<div class="bg-white p-6 rounded-xl shadow mb-10">
+    <h3 class="text-xl font-semibold mb-4">Inventory Value Chart</h3>
+
+    <canvas id="inventoryChart" height="100"></canvas>
+</div>
+
+<!-- Latest Items -->
+<div class="bg-white p-6 rounded-xl shadow">
+    <h3 class="text-xl font-semibold mb-4">Recently Added Items</h3>
+
+    <table class="w-full text-left">
+        <thead>
+            <tr class="border-b">
+                <th class="py-2">Name</th>
+                <th>Qty</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+
+        <tbody>
+        {% for item in latest_items %}
+            <tr class="border-b">
+                <td class="py-2">{{ item.name }}</td>
+                <td>{{ "{:,}".format(item.quantity) }}</td>
+                <td>${{ "{:,.2f}".format(item.price) }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const ctx = document.getElementById("inventoryChart");
+
+    new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: ["Total Inventory Value"],
+            datasets: [{
+                label: "Value",
+                data: [{{ total_value|float }}],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return "$" + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+
+{% endblock %}

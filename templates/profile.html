@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto bg-white shadow rounded-xl p-8">
+
+    <!-- Header -->
+    <div class="flex items-center gap-6">
+
+        <!-- Avatar -->
+        <img src="{{ url_for('static', filename='avatars/' ~ user.avatar) }}"
+             class="w-28 h-28 rounded-full border shadow">
+
+        <div>
+            <h1 class="text-3xl font-bold">{{ user.username }}</h1>
+            <p class="text-gray-500">{{ user.email }}</p>
+        </div>
+    </div>
+
+    <!-- Upload Avatar -->
+    <form action="{{ url_for('profile.update_avatar') }}" method="POST" enctype="multipart/form-data"
+          class="mt-4 flex items-center gap-4">
+
+        <input type="file" name="avatar" class="border p-2 rounded">
+        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            Update Avatar
+        </button>
+    </form>
+
+    <!-- Bio -->
+    <div class="mt-4">
+        <h2 class="font-semibold text-lg">Bio</h2>
+
+        {% if user.bio %}
+            <p id="bio-text"
+               class="text-gray-700 mt-2 whitespace-pre-line overflow-hidden"
+               style="
+                    display: -webkit-box;
+                    -webkit-line-clamp: 3;
+                    -webkit-box-orient: vertical;
+                    overflow-wrap: break-word;
+                    word-break: break-word;
+               ">
+                {{ user.bio }}
+            </p>
+
+            <button id="toggle-bio"
+                    class="mt-2 text-blue-600 hover:underline text-sm">
+                Show More
+            </button>
+
+        {% else %}
+            <p class="text-gray-400">No bio added yet.</p>
+        {% endif %}
+    </div>
+
+    <script>
+        const bioText = document.getElementById("bio-text");
+        const toggleBtn = document.getElementById("toggle-bio");
+
+        if (toggleBtn) {
+            toggleBtn.addEventListener("click", () => {
+                const isExpanded = bioText.style.webkitLineClamp === "unset";
+
+                if (isExpanded) {
+                    // Collapse
+                    bioText.style.webkitLineClamp = "3";
+                    toggleBtn.textContent = "Show More";
+                } else {
+                    // Expand
+                    bioText.style.webkitLineClamp = "unset";
+                    toggleBtn.textContent = "Show Less";
+                }
+            });
+        }
+    </script>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-3 text-center mt-8 border rounded-lg py-4 bg-gray-50">
+
+        <!-- Items Added -->
+        <div>
+            <div class="text-2xl font-bold text-blue-600">{{ user.items|length }}</div>
+            <div class="text-gray-600">Items Added</div>
+        </div>
+
+        <!-- Member Since -->
+        <div>
+            <div class="text-2xl font-bold text-blue-600">{{ user.created_at.strftime('%Y') }}</div>
+            <div class="text-gray-600">Member Since</div>
+        </div>
+
+        <!-- Last Login -->
+        <div>
+            <div class="text-2xl font-bold text-blue-600">
+                {% if user.last_login %}
+                    {% set pk = pytz.timezone('Asia/Karachi') %}
+                    {% set local_time = user.last_login.replace(tzinfo=pytz.UTC).astimezone(pk) %}
+                    {{ local_time.strftime('%b %d, %Y at %I:%M %p') }}
+                {% else %}
+                    –
+                {% endif %}
+            </div>
+            <div class="text-gray-600">Last Login</div>
+        </div>
+
+    </div>
+
+    <!-- Actions -->
+    <div class="flex gap-4 mt-8">
+        <a href="{{ url_for('profile.edit_profile') }}"
+           class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+            Edit Profile
+        </a>
+
+        <a href="{{ url_for('profile.change_password') }}"
+           class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800">
+            Change Password
+        </a>
+    </div>
+
+</div>
+
+{% endblock %}
