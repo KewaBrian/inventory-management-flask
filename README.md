@@ -238,8 +238,3 @@ This project is open-source and available under the **MIT License**.
 
 ---
 
-# 🙌 **Author**
-
-**Rumaisas-islam**
-Made with ❤️ in Pakistan
-If you like this project, ⭐ the repo!
