@@ -1,12 +1,6 @@
 
 # 🚀 **Inventory Management App – Flask**
 
-This repository is a maintained customization by **KewaBrian** of the
-[MIT-licensed inventory-management-flask project](https://github.com/Rumaisas-islam/inventory-management-flask).
-The original author and license are preserved in [LICENSE](LICENSE).
-
-Modern, clean, and fully responsive Inventory Management System built with **Flask**, **Tailwind**, and **SQLite**.
-Designed for smooth item handling, user profiles, authentication, and real-time search.
 
 <p align="center">
   <img src="assets/banner.png" alt="Inventory App Banner" />
