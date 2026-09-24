@@ -183,9 +183,6 @@ direct link to each item. Items belonging to other users are never included.
 
 ---
 
-# 📄 **License**
-
-This project is open-source and available under the **MIT License**.
 
 ---
 
