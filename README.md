@@ -121,40 +121,7 @@ direct link to each item. Items belonging to other users are never included.
 
 ---
 
-# 🔧 **Installation Guide**
 
-### **1️⃣ Clone Repo**
-
-```bash
-git clone https://github.com/KewaBrian/inventory-management-flask.git
-cd inventory-management-flask
-```
-
-### **2️⃣ Create Virtual Environment**
-
-```bash
-python -m venv venv
-```
-
-### **3️⃣ Activate (Windows)**
-
-```bash
-venv\Scripts\activate
-```
-
-### **4️⃣ Install Dependencies**
-
-```bash
-pip install -r requirements.txt
-```
-
-### **5️⃣ Run App**
-
-```bash
-flask run
-```
-
----
 
 # 📸 **Screenshots**
 
