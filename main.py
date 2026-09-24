@@ -226,12 +226,18 @@ def search():
 @login_required
 def dashboard():
     total_items = Item.query.filter_by(user_id=current_user.id).count()
+    low_stock_threshold = current_app.config.get("LOW_STOCK_THRESHOLD", 5)
 
     total_value = db.session.query(
         db.func.sum(Item.price * Item.quantity)
     ).filter(Item.user_id == current_user.id).scalar() or 0
 
-    recent_items = Item.query.filter_by(user_id=current_user.id) \
+    low_stock = Item.query.filter(
+        Item.user_id == current_user.id,
+        Item.quantity < low_stock_threshold
+    ).order_by(Item.quantity.asc(), Item.name.asc()).all()
+
+    latest_items = Item.query.filter_by(user_id=current_user.id) \
         .order_by(Item.created_at.desc()) \
         .limit(5).all()
 
@@ -239,7 +245,9 @@ def dashboard():
         "dashboard.html",
         total_items=total_items,
         total_value=total_value,
-        recent_items=recent_items
+        low_stock=low_stock,
+        low_stock_threshold=low_stock_threshold,
+        latest_items=latest_items
     )
 
 

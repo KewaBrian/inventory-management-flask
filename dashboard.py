@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, current_app
 from flask_login import login_required, current_user
 from extensions import db
 from models import Item
@@ -11,6 +11,7 @@ def home():
 
     # Show only items that belong to logged-in user
     total_items = Item.query.filter_by(user_id=current_user.id).count()
+    low_stock_threshold = current_app.config.get("LOW_STOCK_THRESHOLD", 5)
 
     total_value = (
         db.session.query(db.func.sum(Item.price * Item.quantity))
@@ -21,8 +22,8 @@ def home():
 
     low_stock = Item.query.filter(
         Item.user_id == current_user.id,
-        Item.quantity < 5
-    ).all()
+        Item.quantity < low_stock_threshold
+    ).order_by(Item.quantity.asc(), Item.name.asc()).all()
 
     latest_items = Item.query.filter_by(
         user_id=current_user.id
@@ -33,5 +34,6 @@ def home():
         total_items=total_items,
         total_value=total_value,
         low_stock=low_stock,
+        low_stock_threshold=low_stock_threshold,
         latest_items=latest_items
     )

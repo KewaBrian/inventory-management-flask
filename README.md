@@ -33,6 +33,7 @@ Designed for smooth item handling, user profiles, authentication, and real-time 
 ✔️ Add, Edit, Delete Items
 ✔️ Real-Time Search
 ✔️ Modern Dashboard with Analytics
+✔️ Configurable low-stock alerts with item links
 ✔️ Clean UI/UX with Tailwind
 ✔️ Flash Messages for Feedback
 ✔️ Secure Password Hashing
@@ -126,6 +127,13 @@ inventory_flask/
 
 * SQLite (default)
 * SQLAlchemy ORM
+
+### **Low-stock alerts**
+
+The dashboard highlights each signed-in user's items whose quantity is below
+`LOW_STOCK_THRESHOLD` (5 by default). The threshold can be adjusted in
+`config.py`; alerts are sorted from the lowest quantity first and include a
+direct link to each item. Items belonging to other users are never included.
 
 ---
 

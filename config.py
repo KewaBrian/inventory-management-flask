@@ -13,3 +13,6 @@ class Config:
 
     # Pagination
     ITEMS_PER_PAGE = 6
+
+    # Items below this quantity are shown in dashboard low-stock alerts.
+    LOW_STOCK_THRESHOLD = 5
