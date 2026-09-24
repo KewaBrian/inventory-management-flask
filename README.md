@@ -8,17 +8,7 @@
 
 ---
 
-## 📛 **Badges**
 
-<p align="left">
-  <img src="https://img.shields.io/badge/Framework-Flask-blue" />
-  <img src="https://img.shields.io/badge/Frontend-TailwindCSS-38BDF8" />
-  <img src="https://img.shields.io/badge/Database-SQLite-044a64" />
-  <img src="https://img.shields.io/badge/Status-Complete-brightgreen" />
-  <img src="https://img.shields.io/badge/Author-Rumaisas--islam-pink" />
-</p>
-
----
 
 # ⭐ **Features**
 
